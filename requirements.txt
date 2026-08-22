@@ -1,0 +1,12 @@
+streamlit
+torch
+transformers
+PyPDF2
+pandas
+numpy
+scikit-learn
+rouge-score
+evaluate
+bert_score
+matplotlib
+requests

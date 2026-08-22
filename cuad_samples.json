@@ -1,0 +1,71 @@
+[
+  {
+    "doc_name": "LREI_LLC_Joint_Venture_Agreement.pdf",
+    "reference_summary": "This Joint Venture Agreement governs the relationship between LREI LLC and its partners. It outlines the financial contributions, payment distributions, and confidentiality terms. Disputes arising under the agreement must be settled via binding arbitration in New York. The intellectual property generated belongs solely to LREI LLC.",
+    "text": "JOINT VENTURE AGREEMENT\n\nThis Joint Venture Agreement (the 'Agreement') is entered into as of January 15, 2024, by and between LREI LLC, a Delaware limited liability company ('LREI'), and Capital Partners Group, a New York corporation ('Capital').\n\nSection 1: CAPITAL CONTRIBUTIONS AND PAYMENTS\nCapital Partners Group shall pay an initial capital contribution of $500,000 to LREI LLC. Payments of net proceeds and distributions shall be made on the fifteenth day of each month. All payments under this Agreement shall be made in U.S. Dollars via wire transfer to the designated bank account of LREI. Any late payment shall bear interest at a rate of 1.5% per month from the due date until paid in full.\n\nSection 2: CONFIDENTIALITY\nEach party agrees to maintain in strict confidence all non-public information received from the other party during the term of this Agreement. Neither party shall disclose, publish, or disseminate any Confidential Information of the other party to any third party without prior written consent. The obligation of confidentiality shall survive the termination or expiration of this Agreement for a period of five (5) years.\n\nSection 3: INTELLECTUAL PROPERTY RIGHTS\nLREI shall retain sole and exclusive ownership of all patent, trademark, copyright, and other intellectual property rights created, developed, or generated under this joint venture. Capital Partners Group is granted a non-transferable, royalty-free license to use such intellectual property solely for the performance of its duties under this joint venture. No other rights are granted or implied.\n\nSection 4: LIMITATION OF LIABILITY\nTo the maximum extent permitted by law, LREI LLC shall not be liable to Capital Partners Group for any indirect, incidental, special, or consequential damages, including loss of profits, arising out of or in connection with this Agreement. LREI's maximum aggregate liability for any direct claims shall not exceed the total cash payments actually received by LREI from Capital under this Agreement.\n\nSection 5: DISPUTE RESOLUTION AND ARBITRATION\nAny dispute, controversy, or claim arising out of or relating to this Agreement, including its formation or breach, shall be settled by binding arbitration in accordance with the rules of the American Arbitration Association (AAA). The place of arbitration shall be New York, New York, and the proceedings shall be conducted in English. The arbitrator's decision shall be final and binding on all parties.",
+    "reference_clauses": [
+      {
+        "text": "Capital Partners Group shall pay an initial capital contribution of $500,000 to LREI LLC. Payments of net proceeds and distributions shall be made on the fifteenth day of each month. All payments under this Agreement shall be made in U.S. Dollars via wire transfer to the designated bank account of LREI. Any late payment shall bear interest at a rate of 1.5% per month from the due date until paid in full.",
+        "category": "Payment"
+      },
+      {
+        "text": "Each party agrees to maintain in strict confidence all non-public information received from the other party during the term of this Agreement. Neither party shall disclose, publish, or disseminate any Confidential Information of the other party to any third party without prior written consent. The obligation of confidentiality shall survive the termination or expiration of this Agreement for a period of five (5) years.",
+        "category": "Confidentiality"
+      },
+      {
+        "text": "LREI shall retain sole and exclusive ownership of all patent, trademark, copyright, and other intellectual property rights created, developed, or generated under this joint venture. Capital Partners Group is granted a non-transferable, royalty-free license to use such intellectual property solely for the performance of its duties under this joint venture. No other rights are granted or implied.",
+        "category": "Intellectual Property"
+      },
+      {
+        "text": "To the maximum extent permitted by law, LREI LLC shall not be liable to Capital Partners Group for any indirect, incidental, special, or consequential damages, including loss of profits, arising out of or in connection with this Agreement. LREI's maximum aggregate liability for any direct claims shall not exceed the total cash payments actually received by LREI from Capital under this Agreement.",
+        "category": "Liability"
+      },
+      {
+        "text": "Any dispute, controversy, or claim arising out of or relating to this Agreement, including its formation or breach, shall be settled by binding arbitration in accordance with the rules of the American Arbitration Association (AAA). The place of arbitration shall be New York, New York, and the proceedings shall be conducted in English. The arbitrator's decision shall be final and binding on all parties.",
+        "category": "Dispute Resolution"
+      }
+    ]
+  },
+  {
+    "doc_name": "SaaS_Service_Agreement_Acme.pdf",
+    "reference_summary": "This SaaS Service Agreement is between Acme Corp and CloudOps. It details the termination rights, liability limits, payment terms, and intellectual property. The contract terminates on 30 days notice for breach, limits liability to $10,000, and is subject to the intellectual property ownership of CloudOps.",
+    "text": "SOFTWARE AS A SERVICE (SaaS) AGREEMENT\n\nThis Agreement is entered into by Acme Corp ('Customer') and CloudOps Ltd ('Provider') to govern the cloud hosting and support services.\n\nSection A: SERVICE FEES AND INVOICING\nCustomer agrees to pay the annual subscription fee of $12,000 for the SaaS platform. Provider shall invoice Customer annually in advance, and all invoices shall be paid within thirty (30) days of the invoice date. Late payments are subject to a late charge of 1.0% per month or the maximum rate permitted by law.\n\nSection B: TERM AND TERMINATION\nThis Agreement shall commence on the Effective Date and remain in effect for one (1) year. Either party may terminate this Agreement immediately upon written notice if the other party breaches any material term and fails to cure such breach within thirty (30) days of receiving written notice of the breach. Upon termination, Customer shall immediately cease all access to the software.\n\nSection C: INTELLECTUAL PROPERTY\nThe Provider retains all right, title, and interest in and to the SaaS platform, including all modifications, enhancements, or custom developments. The Customer is granted a limited, non-exclusive, non-transferable license to access the platform during the subscription term. Customer shall not reverse engineer or copy the software.\n\nSection D: LIMITATION OF LIABILITY AND INDEMNITY\nIn no event shall either party be liable to the other for any indirect, punitive, or special damages. CloudOps' total cumulative liability under this agreement, whether in contract, tort, or otherwise, shall be strictly limited to the amount of fees paid by Customer to CloudOps in the twelve (12) months preceding the claim, up to a maximum of $10,000.",
+    "reference_clauses": [
+      {
+        "text": "Customer agrees to pay the annual subscription fee of $12,000 for the SaaS platform. Provider shall invoice Customer annually in advance, and all invoices shall be paid within thirty (30) days of the invoice date. Late payments are subject to a late charge of 1.0% per month or the maximum rate permitted by law.",
+        "category": "Payment"
+      },
+      {
+        "text": "This Agreement shall commence on the Effective Date and remain in effect for one (1) year. Either party may terminate this Agreement immediately upon written notice if the other party breaches any material term and fails to cure such breach within thirty (30) days of receiving written notice of the breach. Upon termination, Customer shall immediately cease all access to the software.",
+        "category": "Termination"
+      },
+      {
+        "text": "The Provider retains all right, title, and interest in and to the SaaS platform, including all modifications, enhancements, or custom developments. The Customer is granted a limited, non-exclusive, non-transferable license to access the platform during the subscription term. Customer shall not reverse engineer or copy the software.",
+        "category": "Intellectual Property"
+      },
+      {
+        "text": "In no event shall either party be liable to the other for any indirect, punitive, or special damages. CloudOps' total cumulative liability under this agreement, whether in contract, tort, or otherwise, shall be strictly limited to the amount of fees paid by Customer to CloudOps in the twelve (12) months preceding the claim, up to a maximum of $10,000.",
+        "category": "Liability"
+      }
+    ]
+  },
+  {
+    "doc_name": "Standard_Mutual_NDA.pdf",
+    "reference_summary": "This Mutual Non-Disclosure Agreement defines the confidential relationships between two signing parties. It details the definition of Confidential Information, the restriction on use, and specifies that the agreement is governed by the state courts of California.",
+    "text": "MUTUAL NON-DISCLOSURE AGREEMENT\n\nThis Mutual Non-Disclosure Agreement is executed to facilitate discussions regarding a potential business relationship.\n\nSection 1: DEFINITION OF CONFIDENTIAL INFORMATION\n'Confidential Information' refers to any proprietary information disclosed by one party ('Discloser') to the other ('Recipient'), including but not limited to business plans, customer lists, code, and financial data, which is marked as confidential or should reasonably be understood to be confidential.\n\nSection 2: PERMITTED USE AND RESTRICTIONS\nThe Recipient agrees to use the Confidential Information solely for the Purpose of evaluating the business relationship. Recipient shall not disclose Confidential Information to any employee or contractor unless they are bound by confidentiality terms at least as restrictive as those herein. Recipient shall protect the information using the same degree of care it uses for its own confidential data, but no less than a reasonable degree of care.\n\nSection 3: GOVERNING LAW AND COURT JURISDICTION\nThis Agreement, and all disputes arising out of it, shall be governed by, construed, and enforced in accordance with the laws of the State of California, without regard to conflict of law principles. The parties submit to the exclusive jurisdiction of the state and federal courts located in San Francisco, California for any lawsuit arising out of this agreement.",
+    "reference_clauses": [
+      {
+        "text": "'Confidential Information' refers to any proprietary information disclosed by one party ('Discloser') to the other ('Recipient'), including but not limited to business plans, customer lists, code, and financial data, which is marked as confidential or should reasonably be understood to be confidential.",
+        "category": "Confidentiality"
+      },
+      {
+        "text": "The Recipient agrees to use the Confidential Information solely for the Purpose of evaluating the business relationship. Recipient shall not disclose Confidential Information to any employee or contractor unless they are bound by confidentiality terms at least as restrictive as those herein. Recipient shall protect the information using the same degree of care it uses for its own confidential data, but no less than a reasonable degree of care.",
+        "category": "Confidentiality"
+      },
+      {
+        "text": "This Agreement, and all disputes arising out of it, shall be governed by, construed, and enforced in accordance with the laws of the State of California, without regard to conflict of law principles. The parties submit to the exclusive jurisdiction of the state and federal courts located in San Francisco, California for any lawsuit arising out of this agreement.",
+        "category": "Dispute Resolution"
+      }
+    ]
+  }
+]
