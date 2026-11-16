@@ -10,3 +10,4 @@ evaluate
 bert_score
 matplotlib
 requests
+pymupdf
