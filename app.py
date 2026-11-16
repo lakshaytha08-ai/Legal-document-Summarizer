@@ -5,8 +5,13 @@ import os
 import torch
 import sys
 import json
-import shutil
-import numpy as np
+import html
+from importlib import import_module
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+RAG_UPLOAD_DIR = os.path.join(current_dir, "uploads")
+
+os.makedirs(RAG_UPLOAD_DIR, exist_ok=True)
 
 # Set page config at the very beginning
 st.set_page_config(
@@ -17,37 +22,41 @@ st.set_page_config(
 )
 
 # 1. Resolve import collision with app.py by temporarily removing current directory from sys.path
-current_dir = os.path.dirname(os.path.abspath(__file__))
 sys_path_backup = list(sys.path)
-sys.path = [p for p in sys.path if p != current_dir and p != '' and p != '.']
-
 # Add RAG backend path
 workspace_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 rag_backend_dir = os.path.join(workspace_dir, "legal-rag", "backend")
-if os.path.exists(rag_backend_dir):
+
+RAG_MODULES = {}
+RAG_AVAILABLE = False
+RAG_ERROR = None
+if os.path.isdir(rag_backend_dir):
+    sys.path = [p for p in sys.path if p not in (current_dir, "", ".")]
     sys.path.insert(0, rag_backend_dir)
-
-# Import RAG libraries safely
-try:
-    from app.embeddings.embedding_model import EmbeddingModel
-    from app.retrieval.vector_store import LocalVectorStore
-    from app.llm.llm_client import LLMClient
-    from app.summarization.summarizer import LegalSummarizer
-    from app.retrieval.hybrid_search import perform_hybrid_search
-    from app.ingestion import loaders, text_cleaner
-    from app.chunking import legal_chunker
-    from app.citations.source_mapper import map_citations_to_sources
-    RAG_AVAILABLE = True
-except ImportError as e:
-    RAG_AVAILABLE = False
-    RAG_ERROR = str(e)
-
-# Restore sys.path for local module imports (document_processor, etc.)
-sys.path = sys_path_backup
+    try:
+        embedding_module = import_module("app.embeddings.embedding_model")
+        vector_store_module = import_module("app.retrieval.vector_store")
+        loaders_module = import_module("app.ingestion.loaders")
+        text_cleaner_module = import_module("app.ingestion.text_cleaner")
+        legal_chunker_module = import_module("app.chunking.legal_chunker")
+        RAG_MODULES = {
+            "EmbeddingModel": embedding_module.EmbeddingModel,
+            "LocalVectorStore": vector_store_module.LocalVectorStore,
+            "loaders": loaders_module,
+            "text_cleaner": text_cleaner_module,
+            "legal_chunker": legal_chunker_module,
+        }
+        RAG_AVAILABLE = True
+    except (ImportError, AttributeError) as e:
+        RAG_ERROR = str(e)
+    finally:
+        sys.path = sys_path_backup
+else:
+    RAG_ERROR = f"Optional RAG backend was not found at {rag_backend_dir}"
 
 # Local application imports
 from document_processor import extract_text_from_pdf, preprocess_text, calculate_basic_stats, extract_potential_clauses
-from nlp_models import load_summarizer, load_classifier, chunk_document, summarize_chunks, classify_clauses, calculate_classification_stats
+from nlp_models import load_summarizer, load_classifier, chunk_document, summarize_chunks, summarize_document_hybrid, classify_clauses, calculate_classification_stats
 from database import init_db, save_document, save_clauses, get_documents_df, get_clauses_df, delete_document_by_id
 import evaluation
 
@@ -64,14 +73,14 @@ if RAG_AVAILABLE:
     
     @st.cache_resource
     def get_vector_db():
-        return LocalVectorStore(store_dir=RAG_STORE_DIR)
+        return RAG_MODULES["LocalVectorStore"](store_dir=RAG_STORE_DIR)
         
     vector_db = get_vector_db()
 
 # Inject style.css
 css_file = os.path.join(current_dir, "style.css")
 if os.path.exists(css_file):
-    with open(css_file, "r") as f:
+    with open(css_file, "r", encoding="utf-8") as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # ----------------- SIDEBAR SETTINGS -----------------
@@ -115,8 +124,12 @@ os.environ["LLM_PROVIDER"] = llm_provider
 os.environ["EMBEDDING_PROVIDER"] = embedding_provider
 if gemini_key:
     os.environ["GEMINI_API_KEY"] = gemini_key
+else:
+    os.environ.pop("GEMINI_API_KEY", None)
 if openai_key:
     os.environ["OPENAI_API_KEY"] = openai_key
+else:
+    os.environ.pop("OPENAI_API_KEY", None)
 
 # Model caching to prevent reloading
 @st.cache_resource
@@ -132,11 +145,10 @@ def get_neural_models():
 st.markdown('<h1 class="title-header">⚖️ Legal Summarization & Clause Classification System</h1>', unsafe_allow_html=True)
 st.markdown("<p style='text-align: center; color: #9CA3AF;'>Long-context transformer summarization, zero-shot clause classification, and hybrid vector RAG analysis.</p>", unsafe_allow_html=True)
 
-# 4-Tab Navigation Layout
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📥 Document Analyzer", 
-    "💬 Interactive RAG Chatbot", 
-    "📊 CUAD Benchmarking & Evaluation", 
+# 3-Tab Navigation Layout
+tab1, tab2, tab3 = st.tabs([
+    "📥 Document Analyzer",
+    "📊 CUAD Benchmarking & Evaluation",
     "🗄️ Database & Logs"
 ])
 
@@ -155,7 +167,8 @@ with tab1:
         if uploaded_file is not None:
             if st.button("🚀 Analyze Legal Document", use_container_width=True):
                 # Save uploaded file to RAG upload dir
-                temp_pdf_path = os.path.join(RAG_UPLOAD_DIR, uploaded_file.name)
+                document_name = os.path.basename(uploaded_file.name)
+                temp_pdf_path = os.path.join(RAG_UPLOAD_DIR, document_name)
                 with open(temp_pdf_path, "wb") as f:
                     f.write(uploaded_file.getbuffer())
                     
@@ -197,19 +210,19 @@ with tab1:
                 
                 # Save relational information
                 with st.spinner("Registering results in SQLite logs..."):
-                    doc_id = save_document(uploaded_file.name, stats, obj_stats, summary)
+                    doc_id = save_document(document_name, stats, obj_stats, summary)
                     if classifications:
                         save_clauses(doc_id, classifications)
                         
                 # 2. RAG Ingestion & Vector indexing
                 if RAG_AVAILABLE:
                     with st.spinner("Ingesting pages for RAG database..."):
-                        raw_pages = loaders.extract_document_text(temp_pdf_path)
-                        cleaned_pages = text_cleaner.preprocess_document(raw_pages)
-                        rag_chunks = legal_chunker.chunk_document(uploaded_file.name, cleaned_pages)
+                        raw_pages = RAG_MODULES["loaders"].extract_document_text(temp_pdf_path)
+                        cleaned_pages = RAG_MODULES["text_cleaner"].preprocess_document(raw_pages)
+                        rag_chunks = RAG_MODULES["legal_chunker"].chunk_document(document_name, cleaned_pages)
                         
                     with st.spinner("Generating vector embeddings and saving to Local Store..."):
-                        emb_model = EmbeddingModel(provider=embedding_provider)
+                        emb_model = RAG_MODULES["EmbeddingModel"](provider=embedding_provider)
                         chunk_texts = [c["text"] for c in rag_chunks]
                         embeddings = emb_model.encode(chunk_texts)
                         vector_db.add_chunks(rag_chunks, embeddings)
@@ -221,7 +234,7 @@ with tab1:
                 st.session_state["last_doc_obj_stats"] = obj_stats
                 st.session_state["last_doc_summary"] = summary
                 st.session_state["last_doc_classifications"] = classifications
-                st.session_state["last_doc_name"] = uploaded_file.name
+                st.session_state["last_doc_name"] = document_name
 
     with col_right:
         st.subheader("Extraction Preview")
@@ -288,10 +301,10 @@ with tab1:
                     st.markdown(f"""
                     <div style="background: rgba(30, 41, 59, 0.25); padding: 1.25rem; border-radius: 12px; border-left: 5px solid rgba(99, 102, 241, 0.6); margin-bottom: 1rem; border-top: 1px solid rgba(255,255,255,0.05); border-right: 1px solid rgba(255,255,255,0.05);">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                            <span class="badge {badge_class}">{c['category']}</span>
+                            <span class="badge {html.escape(badge_class, quote=True)}">{html.escape(str(c['category']))}</span>
                             <span style="font-size: 0.82rem; color: #9CA3AF;">Confidence: <b>{c['confidence']:.1%}</b> | Uncertainty: <b>{c['uncertainty']:.1%}</b></span>
                         </div>
-                        <div style="color: #E5E7EB; font-style: italic; line-height: 1.5; font-size: 0.95rem;">"{c['clause']}"</div>
+                        <div style="color: #E5E7EB; font-style: italic; line-height: 1.5; font-size: 0.95rem;">"{html.escape(str(c['clause']))}"</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
@@ -363,175 +376,14 @@ with tab1:
                 ax2.set_title("Clause Category Breakdown", color='#FFFFFF', fontsize=10, fontweight='bold')
                 st.pyplot(fig2)
 
-# ----------------- TAB 2: INTERACTIVE RAG CHATBOT -----------------
+# ----------------- TAB 2: CUAD BENCHMARKING -----------------
 with tab2:
-    st.subheader("💬 Retrieval-Augmented Generation Q&A")
-    if not RAG_AVAILABLE:
-        st.error(f"RAG engine packages are not available or misconfigured. Error: `{RAG_ERROR}`")
-    else:
-        # Load processed documents from vector store
-        docs = vector_db.get_all_documents()
-        doc_names = [d["document_name"] for d in docs]
-        
-        if not doc_names:
-            st.warning("No documents indexed in the RAG Vector Database yet. Upload and analyze a document in Tab 1 to populate.")
-        else:
-            col_chat, col_side = st.columns([2, 1])
-            
-            with col_side:
-                st.subheader("Document Portal")
-                selected_rag_doc = st.selectbox("Active RAG Document", options=doc_names)
-                
-                # Fetch chunks of selected document
-                doc_chunks = [c for c in vector_db.chunks if c["document_name"] == selected_rag_doc]
-                st.success(f"Successfully loaded index with **{len(doc_chunks)}** chunks.")
-                
-                st.markdown("---")
-                st.subheader("Modular Summaries")
-                summary_type = st.selectbox(
-                    "Generate Summary Type",
-                    options=["Executive Summary", "Clause-by-Clause Summary", "Key Points and Obligations", "Risk Analysis"]
-                )
-                
-                if st.button("⚡ Generate RAG Summary"):
-                    with st.spinner("Processing document summary via LLM client..."):
-                        llm_client = LLMClient(provider=llm_provider)
-                        summarizer = LegalSummarizer(llm_client=llm_client)
-                        
-                        # Set prompts manually based on selected dropdown
-                        from app.llm import prompts
-                        if summary_type == "Executive Summary":
-                            target_prompt = prompts.EXECUTIVE_SUMMARY_PROMPT
-                        elif summary_type == "Clause-by-Clause Summary":
-                            target_prompt = prompts.CLAUSE_SUMMARY_PROMPT
-                        elif summary_type == "Key Points and Obligations":
-                            target_prompt = prompts.KEY_POINTS_PROMPT
-                        else:
-                            target_prompt = prompts.RISK_SUMMARY_PROMPT
-                            
-                        # Sort chunks by page
-                        doc_chunks.sort(key=lambda x: x["pages"][0] if x["pages"] else 0)
-                        
-                        # Generate
-                        total_len = sum(len(c["text"]) for c in doc_chunks)
-                        if total_len > 12000:
-                            summary_context = summarizer._summarize_long_document(doc_chunks)
-                        else:
-                            summary_context = summarizer._combine_context(doc_chunks)
-                            
-                        result = llm_client.generate(target_prompt, f"DOCUMENT CHUNKS:\n{summary_context}")
-                        
-                        st.subheader(f"📋 {summary_type}")
-                        st.markdown(result)
-                        
-            with col_chat:
-                st.subheader(f"Chatting with: {selected_rag_doc}")
-                
-                # Chat session state initialization
-                if "chat_history" not in st.session_state:
-                    st.session_state["chat_history"] = []
-                if "active_citations" not in st.session_state:
-                    st.session_state["active_citations"] = []
-                    
-                # Clear chat history button
-                if st.button("🧹 Clear Chat History"):
-                    st.session_state["chat_history"] = []
-                    st.session_state["active_citations"] = []
-                    st.rerun()
-                    
-                # Display chat messages
-                st.markdown('<div class="chat-wrapper">', unsafe_allow_html=True)
-                for msg in st.session_state["chat_history"]:
-                    if msg["role"] == "user":
-                        st.markdown(f"""
-                        <div class="chat-bubble chat-bubble-user">
-                            <div class="chat-avatar chat-avatar-user">U</div>
-                            <div class="chat-content">{msg['content']}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""
-                        <div class="chat-bubble chat-bubble-assistant">
-                            <div class="chat-avatar chat-avatar-assistant">AI</div>
-                            <div class="chat-content">{msg['content']}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Chat input
-                query = st.chat_input("Ask a question about terms, liability, payment dates, etc...")
-                
-                if query:
-                    # Render user bubble immediately
-                    st.markdown(f"""
-                    <div class="chat-bubble chat-bubble-user" style="align-self: flex-end;">
-                        <div class="chat-avatar chat-avatar-user">U</div>
-                        <div class="chat-content">{query}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    
-                    st.session_state["chat_history"].append({"role": "user", "content": query})
-                    
-                    with st.spinner("Consulting vector stores and LLM..."):
-                        # 1. Generate query embedding
-                        emb_model = EmbeddingModel(provider=embedding_provider)
-                        query_emb = emb_model.encode([query])[0]
-                        
-                        # 2. Perform hybrid search
-                        retrieved = perform_hybrid_search(
-                            vector_store=vector_db,
-                            query=query,
-                            query_embedding=query_emb,
-                            top_k=4
-                        )
-                        
-                        # Filter to only the active document chunks
-                        retrieved = [c for c in retrieved if c["document_name"] == selected_rag_doc]
-                        
-                        if not retrieved:
-                            ans = "I could not find sufficient information about this issue in the uploaded document."
-                            citations = []
-                        else:
-                            # 3. Create context block
-                            context_parts = []
-                            for c in retrieved:
-                                pages_str = ", ".join(map(str, c["pages"]))
-                                h_tag = f"[chunk_{c['chunk_id'][:8]} | {c['document_name']} | Pages: {pages_str} | Sec: {c['section_header']} | Clause: {c.get('clause_number', '')}]"
-                                context_parts.append(f"{h_tag}\n{c['text']}")
-                            context_str = "\n\n".join(context_parts)
-                            
-                            # 4. Invoke LLM Client
-                            llm_client = LLMClient(provider=llm_provider)
-                            from app.llm import prompts
-                            prompt_content = prompts.QA_PROMPT_TEMPLATE.format(context=context_str, query=query)
-                            ans = llm_client.generate(prompts.SYSTEM_QA_PROMPT, prompt_content)
-                            
-                            # 5. Extract Citations
-                            citations = map_citations_to_sources(ans, retrieved)
-                            
-                        # Save citations and assistant response in state
-                        st.session_state["chat_history"].append({"role": "assistant", "content": ans})
-                        st.session_state["active_citations"] = citations
-                        st.rerun()
-                        
-                # Display Mapped Citations
-                if st.session_state.get("active_citations"):
-                    st.markdown("---")
-                    st.subheader("🔍 Mapped Source Citations")
-                    st.write("Click to view the source text segments referenced in the answer.")
-                    for c_ref in st.session_state["active_citations"]:
-                        with st.expander(f"CITED: {c_ref['citation_label']} | Section: {c_ref['section_header']}"):
-                            st.markdown(f"**Document**: `{c_ref['document_name']}` | **Pages**: `{c_ref['pages']}`")
-                            st.write(c_ref["text_snippet"])
-
-# ----------------- TAB 3: CUAD BENCHMARKING -----------------
-with tab3:
     st.subheader("📈 CUAD Dataset Evaluation & Testing")
     st.write("Evaluate summarization and classification metrics using curated Contract Understanding Atticus Dataset (CUAD) agreements.")
     
     # Load local JSON contracts
     try:
-        with open("cuad_samples.json", "r") as f:
+        with open(os.path.join(current_dir, "cuad_samples.json"), "r", encoding="utf-8") as f:
             cuad_contracts = json.load(f)
         names = [c["doc_name"] for c in cuad_contracts]
     except Exception as e:
@@ -632,8 +484,8 @@ with tab3:
                         })
                     st.dataframe(pd.DataFrame(comp_data))
 
-# ----------------- TAB 4: DATABASE & LOGS -----------------
-with tab4:
+# ----------------- TAB 3: DATABASE & LOGS -----------------
+with tab3:
     st.subheader("🗄️ SQLite Database Logs Explorer")
     
     docs_df = get_documents_df()
@@ -647,7 +499,7 @@ with tab4:
         st.subheader("Inspect and Delete Records")
         
         # Load select box for deletion / inspection
-        doc_map = {row['doc_name']: row['id'] for idx, row in docs_df.iterrows()}
+        doc_map = {row['doc_name']: row['id'] for _, row in docs_df.iterrows()}
         selected_inspect_name = st.selectbox("Select Record to Inspect / Delete", options=list(doc_map.keys()))
         
         if selected_inspect_name:
