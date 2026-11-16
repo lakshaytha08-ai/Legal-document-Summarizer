@@ -176,7 +176,16 @@ with tab1:
                 with st.spinner("Extracting contract text..."):
                     raw_text = extract_text_from_pdf(temp_pdf_path)
                     clean_text = preprocess_text(raw_text)
-                    
+
+                # Do not report a successful analysis when the PDF yielded no text.
+                if not clean_text:
+                    st.error(
+                        "No selectable text was found in this PDF. "
+                        "If it is a scanned/image-only PDF, OCR is required. "
+                        "Try a text-based PDF or provide an OCR-processed PDF."
+                    )
+                    st.stop()
+
                 with st.spinner("Dividing long document into sliding window chunks..."):
                     chunks = chunk_document(clean_text, max_tokens=chunk_size, overlap=overlap)
                     stats = calculate_basic_stats(clean_text, chunks)
