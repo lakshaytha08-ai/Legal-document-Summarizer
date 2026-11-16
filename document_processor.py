@@ -3,10 +3,10 @@ import numpy as np
 import fitz
 
 
-def extract_text_from_pdf(pdf_file):
+def extract_text_from_pdf(pdf_file, ocr_language="eng", ocr_dpi=200):
     """
-    Extract text from a PDF path or file-like object with PyMuPDF.
-    Image-only/scanned PDFs return no selectable text and need OCR.
+    Extract selectable PDF text and fall back to Tesseract OCR for scanned pages.
+    Accepts a file path or a file-like object.
     """
     doc = None
     try:
@@ -20,8 +20,30 @@ def extract_text_from_pdf(pdf_file):
         else:
             doc = fitz.open(pdf_file)
 
-        pages = [page.get_text("text").strip() for page in doc]
-        return "\n".join(page for page in pages if page).strip()
+        extracted_pages = []
+        for page_number, page in enumerate(doc, start=1):
+            page_text = page.get_text("text").strip()
+
+            # OCR only pages that contain no selectable text.
+            if not page_text:
+                try:
+                    text_page = page.get_textpage_ocr(
+                        language=ocr_language,
+                        dpi=ocr_dpi,
+                        full=True,
+                    )
+                    page_text = page.get_text("text", textpage=text_page).strip()
+                except Exception as ocr_error:
+                    raise RuntimeError(
+                        f"OCR failed on PDF page {page_number}. "
+                        "Make sure Tesseract OCR and the requested language data "
+                        f"are installed. Details: {ocr_error}"
+                    ) from ocr_error
+
+            if page_text:
+                extracted_pages.append(page_text)
+
+        return "\\n".join(extracted_pages).strip()
     except Exception as exc:
         raise RuntimeError(f"Could not extract text from PDF: {exc}") from exc
     finally:
