@@ -82,7 +82,7 @@ def summarize_chunks_mock(chunks):
             
     # Sort by score and take top 4
     ranked_sents.sort(key=lambda x: x[1], reverse=True)
-    summary_sents = [item[0] for item in ranked_sents[:1000]]
+    summary_sents = [item[0] for item in ranked_sents[:800]]
     
     # Ensure they are in the original reading order
     ordered_sents = []
